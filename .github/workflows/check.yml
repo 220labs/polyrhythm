@@ -1,0 +1,40 @@
+# The repo's check on macOS: the self-test, the launcher build, the installer's dry run.
+# Linux is left out on purpose: the tool is macOS-only, and a green Linux run would mislead.
+# Free on a public repo; on a private one each macOS minute bills at 10x.
+name: check
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: self-test
+        run: |
+          python3 --version
+          python3 -W error polyrhythm.py check
+      # the Command Line Tools' python (3.9.6 on both images, 2026-10-05), isolated, as the launcher runs it
+      - name: self-test under /usr/bin/python3 -I
+        run: |
+          /usr/bin/python3 --version
+          /usr/bin/python3 -I polyrhythm.py check
+      - name: launcher builds clean
+        run: cc -O2 -Wall -Wextra -Werror -DSCRIPT="\"$PWD/polyrhythm.py\"" -o "$RUNNER_TEMP/polyrhythm-host" polyrhythm-host.c
+      # No .env here on purpose: with one, `check` goes on to the runner's own (empty, readable)
+      # chat.db and fails to find a chat. Without one the installer must refuse, non-zero.
+      - name: installer and plist
+        run: |
+          sh -n install.sh
+          plutil -lint dev.220labs.polyrhythm.plist
+          if out=$(sh install.sh --check-only); then echo "$out"; echo "expected a refusal without .env"; exit 1; fi
+          echo "$out"
+          echo "$out" | grep -q '^check: no .env: the self-test only'
+          echo "$out" | grep -q '^\.env: missing'

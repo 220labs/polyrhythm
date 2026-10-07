@@ -1,0 +1,33 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.DS_Store
+
+.claude/settings.local.json
+
+# coding agents' per-session worktrees
+.claude/worktrees/
+
+# text only: no binaries, no databases (a real chat.db must never be committed)
+polyrhythm-host
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.mp3
+*.wav
+*.mp4
+*.mov
+*.pdf
+*.zip
+*.db
+*.sqlite
+
+# the runtime, when polyrhythm runs from this folder (POLYRHYTHM_DIR empty)
+inbox/
+state.json
+log.jsonl
+.lock

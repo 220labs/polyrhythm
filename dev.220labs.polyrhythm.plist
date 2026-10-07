@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- polyrhythm: your bot in the iMessage chat (polyrhythm.py run), started through polyrhythm-host, which has the script's path built in —
+     the one binary Full Disk Access and Automation -> Messages are granted to (polyrhythm-host.c
+     says why). A template: install.sh fills the __NAMES__ and copies it to
+     ~/Library/LaunchAgents/dev.220labs.polyrhythm.plist. KeepAlive only after a non-zero exit: a crash,
+     or the job waiting for Full Disk Access (it tries again every 30 s, so the grant needs no
+     restart by hand). A settings error exits cleanly and waits for you. -->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>dev.220labs.polyrhythm</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>__HOST__</string>
+	</array>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>__PATH__</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<dict>
+		<key>SuccessfulExit</key>
+		<false/>
+	</dict>
+	<key>ThrottleInterval</key>
+	<integer>30</integer>
+	<key>ProcessType</key>
+	<string>Background</string>
+	<key>StandardOutPath</key>
+	<string>__LOG__</string>
+	<key>StandardErrorPath</key>
+	<string>__LOG__</string>
+</dict>
+</plist>

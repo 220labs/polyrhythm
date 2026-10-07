@@ -1,0 +1,45 @@
+# Auto-merge for agents' pull requests: once one is out of draft, it merges itself (rebase, the
+# repo's only method) the moment both required `check` jobs pass. Nobody taps Merge.
+#
+# Which PRs: head branch `claude/*`, pushed to this repo (a fork's PR never qualifies: its token
+# is read-only, and the head-repo test says so first), not a draft, no `hold` label.
+# Drafts are the agents' work in progress (the session hook opens every PR as a draft and
+# `/finish` takes it out once the branch is curated), so "ready for review" is the signal.
+# Labelling `hold` takes auto-merge off again; removing it puts it back.
+#
+# A merge here is not a deploy: a bot runs what its owner last pulled and installed (AGENTS.md).
+# GitHub must allow auto-merge for this to do anything: .github/repo-settings.json.
+# The merge is made with this workflow's token, so it starts no `check` run on `main` (GitHub
+# never chains workflows off GITHUB_TOKEN pushes); the PR's own run already checked that tree.
+name: automerge
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize, labeled, unlabeled]
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: automerge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  automerge:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'claude/') &&
+      !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: arm or disarm auto-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+          HOLD: ${{ contains(github.event.pull_request.labels.*.name, 'hold') }}
+        run: |
+          if [ "$HOLD" = true ]; then
+            gh pr merge --disable-auto "$PR" || true
+            echo "hold: auto-merge off for $PR"
+          else
+            gh pr merge --auto --rebase "$PR"
+            echo "armed: $PR merges when the required checks pass"
+          fi
